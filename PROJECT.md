@@ -17,3 +17,8 @@ A microservice where users can create and manage wishlists. When a user adds an 
 - **Infrastructure as Code**: AWS CDK (TypeScript)
 - **Containerization**: Docker
 - **CI/CD**: GitHub Actions
+
+## 3. Milestones
+
+- [x] **Week 1: Foundations**: Project setup, NestJS initialization, linting, and Git repository.
+- [x] **Week 2: User Authentication**: AWS Cognito setup, user sign-up, and user sign-in endpoints.
