@@ -42,5 +42,21 @@ This file is a personal knowledge base to track key concepts, commands, and reso
 - **JWT Verification**: The process of validating a token's signature to ensure it was issued by a trusted source (our Cognito User Pool) and has not been tampered with.
   - **JWKS (JSON Web Key Set)**: A set of public keys used to verify JWT signatures. We fetch this from a public URL provided by Cognito.
 
+## Week 3: Core Wishlist API
+
+- **Amazon DynamoDB**: A fully managed, serverless, NoSQL database.
+  - **Single-Table Design**: A common DynamoDB pattern where different types of data are stored in a single table, distinguished by their Primary Keys.
+  - **PK (Partition Key) / SK (Sort Key)**: The composite primary key used to uniquely identify items and model one-to-many relationships.
+  - **Billing Mode**: We used `PAY_PER_REQUEST`, which is ideal for development and applications with unpredictable workloads.
+- **DynamoDB Document Client**: A higher-level client from the AWS SDK (`@aws-sdk/lib-dynamodb`) that allows working with native JavaScript objects instead of the low-level DynamoDB format.
+- **CRUD with DynamoDB**:
+  - **Create**: `PutCommand` inserts or replaces an entire item.
+  - **Read**: `QueryCommand` efficiently retrieves a collection of items with the same Partition Key.
+  - **Update**: `UpdateCommand` modifies specific attributes of an existing item. We used `UpdateExpression` and `ConditionExpression` for safe updates.
+  - **Delete**: `DeleteCommand` removes an item. We used `ConditionExpression` to ensure the item exists before deleting.
+- **NestJS Route Parameters**:
+  - **`@Param('id')`**: Decorator to extract a parameter from the URL (e.g., the `:id` in `@Delete(':id')`).
+  - **`ParseUUIDPipe`**: A built-in pipe to automatically validate that a route parameter is a valid UUID.
+
 ---
 *This document will be updated as we progress through the project.*
