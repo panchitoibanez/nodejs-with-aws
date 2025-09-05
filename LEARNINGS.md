@@ -58,5 +58,15 @@ This file is a personal knowledge base to track key concepts, commands, and reso
   - **`@Param('id')`**: Decorator to extract a parameter from the URL (e.g., the `:id` in `@Delete(':id')`).
   - **`ParseUUIDPipe`**: A built-in pipe to automatically validate that a route parameter is a valid UUID.
 
+## Week 4: Asynchronous Processing
+
+- **Decoupled Architecture**: A design principle where different components of a system are loosely connected. This improves scalability and resilience. We decoupled the slow web scraping from the initial user request.
+- **AWS SQS (Simple Queue Service)**: A fully managed message queuing service. It enables asynchronous communication between different software components. We used it to send "scrape URL" jobs to a background worker.
+- **AWS Lambda**: A serverless compute service that runs your code in response to triggers. This is the core of our background processing.
+- **IAM Roles for Services**: Instead of giving credentials to a service, we create an IAM Role that the service "assumes". This is a secure way to grant permissions.
+  - **Trust Policy**: Defines which principals (e.g., `lambda.amazonaws.com`) are allowed to assume the role.
+  - **Permissions Policy**: Defines what actions the principal is allowed to perform on which resources.
+- **Lambda Event Source Mapping**: The trigger that connects an event source (like an SQS queue) to a Lambda function, causing the function to be invoked when new events occur.
+
 ---
 *This document will be updated as we progress through the project.*
