@@ -16,6 +16,7 @@ import {
   import { CreateWishlistDto } from './dto/create-wishlist.dto';
   import { AuthGuard } from '../auth/auth/auth.guard';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
+import { AddItemDto } from './dto/add-item.dto';
   
   @Controller('wishlist')
   @UseGuards(AuthGuard) // Apply the guard to the entire controller
@@ -55,6 +56,17 @@ import { UpdateWishlistDto } from './dto/update-wishlist.dto';
         id,
         updateWishlistDto.name,
       );
+    }
+
+    @Post(':id/item')
+    @HttpCode(HttpStatus.ACCEPTED)
+    addItem(
+      @Request() req,
+      @Param('id', ParseUUIDPipe) id: string,
+      @Body() addItemDto: AddItemDto,
+    ) {
+      const userId = req.user.sub;
+      return this.wishlistService.addItemToWishlist(userId, id, addItemDto.url);
     }
     
   }

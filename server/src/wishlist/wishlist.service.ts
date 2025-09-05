@@ -6,20 +6,26 @@ import {
   PutCommand,
   QueryCommand,
   DeleteCommand,
-  UpdateCommand,    
+  UpdateCommand,
+  GetCommand, // <-- Import GetCommand
 } from '@aws-sdk/lib-dynamodb';
 import { randomUUID } from 'crypto';
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
 @Injectable()
 export class WishlistService {
   private readonly docClient: DynamoDBDocumentClient;
   private readonly tableName: string;
+  private readonly sqsClient: SQSClient;
 
   constructor(private readonly configService: ConfigService) {
     const client = new DynamoDBClient({
       region: this.configService.get<string>('AWS_REGION'),
     });
     this.docClient = DynamoDBDocumentClient.from(client);
+    this.sqsClient = new SQSClient({ // <-- Initialize SQS client
+      region: this.configService.get<string>('AWS_REGION'),
+    });
     this.tableName = 'SmartWishlistTable'; // In a real app, this would also be in config
   }
 
@@ -111,5 +117,69 @@ export class WishlistService {
       }
       throw error;
     }
+  }
+
+  async addItemToWishlist(
+    userId: string,
+    wishlistId: string,
+    url: string,
+  ): Promise<{ itemId: string }> {
+    // 1. First, verify the wishlist exists and belongs to the user
+    const getCommand = new GetCommand({
+      TableName: this.tableName,
+      Key: {
+        PK: `USER#${userId}`,
+        SK: `WISHLIST#${wishlistId}`,
+      },
+    });
+
+    const { Item: wishlist } = await this.docClient.send(getCommand);
+    if (!wishlist) {
+      throw new NotFoundException(`Wishlist with ID ${wishlistId} not found.`);
+    }
+
+    const itemId = randomUUID();
+
+    // 2. Create the item in DynamoDB with a PENDING status
+    const item = {
+      PK: `USER#${userId}`,
+      SK: `WISHLIST#${wishlistId}#ITEM#${itemId}`,
+      Url: url,
+      Status: 'PENDING',
+      CreatedAt: new Date().toISOString(),
+    };
+
+    const putCommand = new PutCommand({
+      TableName: this.tableName,
+      Item: item,
+      // We no longer need the incorrect ConditionExpression here
+    });
+
+    // 3. Create the message to send to SQS
+    const message = {
+      userId,
+      wishlistId,
+      itemId,
+      url,
+    };
+
+    const sendMessageCommand = new SendMessageCommand({
+      QueueUrl: this.configService.get<string>('SQS_QUEUE_URL'),
+      MessageBody: JSON.stringify(message),
+    });
+
+    try {
+      // We can run these in parallel for better performance
+      await Promise.all([
+        this.docClient.send(putCommand),
+        this.sqsClient.send(sendMessageCommand),
+      ]);
+    } catch (error) {
+      // The old error handling is no longer needed here as we checked above
+      console.error('Error adding item to wishlist:', error);
+      throw error;
+    }
+
+    return { itemId };
   }
 }
