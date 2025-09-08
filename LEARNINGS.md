@@ -68,5 +68,20 @@ This file is a personal knowledge base to track key concepts, commands, and reso
   - **Permissions Policy**: Defines what actions the principal is allowed to perform on which resources.
 - **Lambda Event Source Mapping**: The trigger that connects an event source (like an SQS queue) to a Lambda function, causing the function to be invoked when new events occur.
 
+## Week 5: Infrastructure as Code (IaC)
+
+- **AWS CDK (Cloud Development Kit)**: A framework for defining your cloud infrastructure in code using familiar programming languages. This enables repeatability, version control, and automation.
+- **CDK Concepts**:
+  - **Constructs**: The building blocks of the CDK. Each construct represents an AWS resource (e.g., `new dynamodb.Table(...)`).
+  - **Stack**: A collection of related constructs that are deployed together as a single unit (our `InfrastructureStack`).
+  - **`cdk bootstrap`**: A one-time command that provisions the necessary resources (S3 bucket, IAM roles) for the CDK to perform deployments in an AWS account/region.
+  - **`cdk synth`**: Synthesizes the CDK code into a low-level AWS CloudFormation template.
+  - **`cdk diff`**: Compares the stack defined in your code against what's currently deployed in AWS.
+  - **`cdk deploy`**: Deploys your stack to AWS.
+- **CDK Best Practices**:
+  - **Removal Policy**: Setting `removalPolicy: cdk.RemovalPolicy.DESTROY` is useful for development stacks to ensure easy cleanup.
+  - **High-Level Grant Methods**: Using methods like `table.grantWriteData(role)` is a secure and readable way to manage IAM permissions.
+  - **`CfnOutput`**: Used to export important values (like resource IDs and URLs) from your stack after deployment.
+
 ---
 *This document will be updated as we progress through the project.*
