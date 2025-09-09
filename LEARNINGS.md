@@ -83,5 +83,16 @@ This file is a personal knowledge base to track key concepts, commands, and reso
   - **High-Level Grant Methods**: Using methods like `table.grantWriteData(role)` is a secure and readable way to manage IAM permissions.
   - **`CfnOutput`**: Used to export important values (like resource IDs and URLs) from your stack after deployment.
 
+## Week 6: Automation & CI/CD
+
+- **GitHub Actions**: A CI/CD platform integrated into GitHub. We used it to automate our testing and deployment processes.
+- **Workflow**: A set of automated jobs defined in a YAML file (e.g., `deploy.yml`).
+  - **`on: push: branches: [main]`**: The trigger that starts the workflow.
+  - **`jobs`**: A workflow is made up of one or more jobs that run independently by default.
+  - **`needs: test`**: A keyword to create a dependency, ensuring one job runs only after another succeeds.
+  - **`working-directory`**: A directive to run a command in a specific subdirectory.
+- **Passwordless Authentication (OIDC)**: The secure, modern way to authenticate a CI/CD pipeline with a cloud provider. We created an IAM Role that explicitly trusts GitHub Actions for our specific repository, eliminating the need for long-lived secret keys.
+- **`npm ci`**: A command similar to `npm install`, but it is designed for automated environments. It's generally faster and more reliable as it installs dependencies exactly as defined in the `package-lock.json` file.
+
 ---
 *This document will be updated as we progress through the project.*

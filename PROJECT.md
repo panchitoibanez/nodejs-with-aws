@@ -25,3 +25,4 @@ A microservice where users can create and manage wishlists. When a user adds an 
 - [x] **Week 3: Core Wishlist API**: DynamoDB setup and full CRUD API for managing wishlists.
 - [x] **Week 4: Asynchronous Scraper**: Set up an SQS queue and a Lambda function to create a decoupled, event-driven workflow for background processing.
 - [x] **Week 5: Infrastructure as Code**: Recreated the entire cloud infrastructure using the AWS CDK.
+- [x] **Week 6: Automation & CI/CD**: Built a complete CI/CD pipeline with GitHub Actions to automatically test and deploy the application and infrastructure.
