@@ -60,6 +60,9 @@ jobs:
         run: npm ci
         working-directory: ./infrastructure
 
+      - name: Install AWS CDK globally
+        run: npm install -g aws-cdk
+
       - name: Deploy CDK Stack
         run: cdk deploy --require-approval never
         working-directory: ./infrastructure
