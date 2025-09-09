@@ -6,6 +6,6 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [ConfigModule],
   controllers: [WishlistController],
-  providers: [WishlistService]
+  providers: [WishlistService],
 })
 export class WishlistModule {}

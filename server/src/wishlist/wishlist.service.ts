@@ -23,7 +23,8 @@ export class WishlistService {
       region: this.configService.get<string>('AWS_REGION'),
     });
     this.docClient = DynamoDBDocumentClient.from(client);
-    this.sqsClient = new SQSClient({ // <-- Initialize SQS client
+    this.sqsClient = new SQSClient({
+      // <-- Initialize SQS client
       region: this.configService.get<string>('AWS_REGION'),
     });
     this.tableName = 'SmartWishlistTable'; // In a real app, this would also be in config
@@ -52,7 +53,7 @@ export class WishlistService {
   }
 
   async getWishlistsForUser(userId: string) {
-    const command = new QueryCommand({  
+    const command = new QueryCommand({
       TableName: this.tableName,
       KeyConditionExpression: 'PK = :pk',
       ExpressionAttributeValues: {
@@ -65,21 +66,20 @@ export class WishlistService {
   }
 
   async deleteWishlist(userId: string, wishlistId: string): Promise<void> {
-    const command = new DeleteCommand({ 
+    const command = new DeleteCommand({
       TableName: this.tableName,
       Key: {
         PK: `USER#${userId}`,
         SK: `WISHLIST#${wishlistId}`,
       },
-      // This is an important addition for security
       ConditionExpression: 'attribute_exists(PK)',
     });
 
     try {
       await this.docClient.send(command);
     } catch (error) {
-      // This error occurs if the ConditionExpression fails
-      if (error.name === 'ConditionalCheckFailedException') {
+      // Type guard to safely access error.name
+      if (error instanceof Error && error.name === 'ConditionalCheckFailedException') {
         throw new NotFoundException(
           `Wishlist with ID ${wishlistId} not found or you do not have permission to delete it.`,
         );
@@ -110,7 +110,8 @@ export class WishlistService {
       const { Attributes } = await this.docClient.send(command);
       return Attributes;
     } catch (error) {
-      if (error.name === 'ConditionalCheckFailedException') {
+      // Type guard to safely access error.name
+      if (error instanceof Error && error.name === 'ConditionalCheckFailedException') {
         throw new NotFoundException(
           `Wishlist with ID ${wishlistId} not found or you do not have permission to update it.`,
         );
@@ -170,10 +171,7 @@ export class WishlistService {
 
     try {
       // We can run these in parallel for better performance
-      await Promise.all([
-        this.docClient.send(putCommand),
-        this.sqsClient.send(sendMessageCommand),
-      ]);
+      await Promise.all([this.docClient.send(putCommand), this.sqsClient.send(sendMessageCommand)]);
     } catch (error) {
       // The old error handling is no longer needed here as we checked above
       console.error('Error adding item to wishlist:', error);

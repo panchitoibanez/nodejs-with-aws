@@ -38,7 +38,10 @@ export class AuthService {
     }
   }
 
-  async signIn(email: string, password: string): Promise<InitiateAuthCommandOutput['AuthenticationResult']> {
+  async signIn(
+    email: string,
+    password: string,
+  ): Promise<InitiateAuthCommandOutput['AuthenticationResult']> {
     const clientId = this.configService.get<string>('COGNITO_CLIENT_ID');
 
     const command = new InitiateAuthCommand({

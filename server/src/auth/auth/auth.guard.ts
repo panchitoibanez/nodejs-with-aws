@@ -3,30 +3,78 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload, verify } from 'jsonwebtoken';
-import jwkToPem from 'jwk-to-pem';
+// ⬇️ IMPORTANT: do NOT import { JWK } – it's too loose and trips eslint
+import jwkToPemLib from 'jwk-to-pem';
+import type { Request } from 'express';
 
-// We are extending the Express Request object to include our custom user property
+// --- Strong JWK typing for Cognito ---
+interface CognitoJwk {
+  kid: string;
+  kty: 'RSA';
+  n: string;
+  e: string;
+  alg?: string;
+  use?: string;
+}
+
+// A strictly-typed wrapper around jwk-to-pem to avoid "unsafe call" lint
+const jwkToPemStrict: (jwk: CognitoJwk) => string = jwkToPemLib as unknown as (
+  jwk: CognitoJwk,
+) => string;
+
+// --- Helper Type Guards & Interfaces ---
+function isJwk(key: unknown): key is CognitoJwk {
+  return (
+    typeof key === 'object' &&
+    key !== null &&
+    'kid' in key &&
+    'kty' in key &&
+    'n' in key &&
+    'e' in key &&
+    typeof (key as { kid: unknown }).kid === 'string' &&
+    (key as { kty: unknown }).kty === 'RSA' &&
+    typeof (key as { n: unknown }).n === 'string' &&
+    typeof (key as { e: unknown }).e === 'string'
+  );
+}
+
+function isDecodedTokenHeader(header: unknown): header is { kid: string } {
+  return (
+    typeof header === 'object' &&
+    header !== null &&
+    'kid' in header &&
+    typeof (header as { kid: unknown }).kid === 'string'
+  );
+}
+
+export interface UserPayload extends JwtPayload {
+  'cognito:username': string;
+  email: string;
+  sub: string;
+}
+
 declare module 'express' {
   interface Request {
-    user: JwtPayload & {
-      'cognito:username': string;
-      email: string;
-    };
+    user?: UserPayload;
   }
 }
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  private jwks: any;
+  private readonly logger = new Logger(AuthGuard.name);
+  private pems: Record<string, string> = {};
 
-  constructor(private readonly configService: ConfigService) {
-    this.fetchJwks();
-  }
+  constructor(private readonly configService: ConfigService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (Object.keys(this.pems).length === 0) {
+      await this.fetchJwks();
+    }
+
     const request = context.switchToHttp().getRequest<Request>();
     const token = this.extractTokenFromHeader(request);
 
@@ -36,58 +84,83 @@ export class AuthGuard implements CanActivate {
 
     try {
       const decoded = await this.verifyToken(token);
-      (request as any).user = decoded;
+      request.user = decoded;
       return true;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Token verification failed: ${errorMessage}`);
       throw new UnauthorizedException('Token is not valid');
     }
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    // Express request headers are indexed by string, so use bracket notation
-    const authHeader = (request.headers as any)['authorization'] as string | undefined;
-    if (!authHeader) return undefined;
-    const [type, token] = authHeader.split(' ');
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
   }
 
   private async fetchJwks() {
     const region = this.configService.get<string>('AWS_REGION');
     const userPoolId = this.configService.get<string>('COGNITO_USER_POOL_ID');
-
     const jwksUrl = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/jwks.json`;
 
     try {
       const response = await fetch(jwksUrl);
-      const data = await response.json();
-      this.jwks = data.keys;
+      const jsonData: unknown = await response.json();
+
+      if (
+        typeof jsonData === 'object' &&
+        jsonData !== null &&
+        'keys' in jsonData &&
+        Array.isArray((jsonData as { keys?: unknown }).keys)
+      ) {
+        const keys = (jsonData as { keys: unknown[] }).keys;
+
+        // ✅ All typing is explicit; no "unsafe call/assignment" here
+        this.pems = keys.reduce<Record<string, string>>((acc, key) => {
+          if (isJwk(key)) {
+            acc[key.kid] = jwkToPemStrict(key);
+          }
+          return acc;
+        }, {});
+      }
+
+      this.logger.log('Successfully fetched and cached JWKS as PEMs.');
     } catch (error) {
-      console.error('Error fetching JWKS:', error);
-      // Handle the error appropriately, maybe retry or throw a startup error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error fetching JWKS: ${errorMessage}`);
+      throw new Error('Failed to fetch JWKS');
     }
   }
 
-  private async verifyToken(token: string): Promise<any> {
-    // 1. Decode the token to get the 'kid' (Key ID) from the header
-    const decodedToken = JSON.parse(Buffer.from(token.split('.')[0], 'base64').toString());
-    const kid = decodedToken.kid;
-
-    // 2. Find the matching key in our fetched JWKS
-    const jwk = this.jwks.find((key) => key.kid === kid);
-    if (!jwk) {
-      throw new Error('No matching JWK found');
+  private async verifyToken(token: string): Promise<UserPayload> {
+    const [headerB64] = token.split('.');
+    if (!headerB64) {
+      throw new Error('Token header segment missing');
     }
 
-    // 3. Convert the JWK to a PEM format
-    const pem = jwkToPem(jwk);
+    const headerJson = Buffer.from(headerB64, 'base64').toString('utf8');
 
-    // 4. Verify the token's signature using the PEM key
+    let decodedTokenHeader: unknown;
+    try {
+      decodedTokenHeader = JSON.parse(headerJson);
+    } catch {
+      throw new Error('Invalid token header encoding');
+    }
+
+    if (!isDecodedTokenHeader(decodedTokenHeader)) {
+      throw new Error('Token header is invalid or missing kid');
+    }
+
+    const pem = this.pems[decodedTokenHeader.kid];
+    if (!pem) {
+      throw new Error('No matching PEM found for token');
+    }
+
     return new Promise((resolve, reject) => {
       verify(token, pem, { algorithms: ['RS256'] }, (err, decoded) => {
-        if (err) {
-          return reject(err);
-        }
-        resolve(decoded);
+        if (err) return reject(err);
+        if (!decoded) return reject(new Error('Token could not be decoded.'));
+        resolve(decoded as UserPayload);
       });
     });
   }
