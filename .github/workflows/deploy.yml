@@ -46,7 +46,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::628316168607:role/GitHubAction-SmartWishlist-Deployer # 👈 UPDATE
+          role-to-assume: arn:aws:iam::628316168607:role/GitHubAction-SmartWishlist-DeployRole
           aws-region: us-east-1
 
       - name: Login to Amazon ECR
@@ -86,7 +86,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::628316168607:role/GitHubAction-SmartWishlist-Deployer # 👈 UPDATE
+          role-to-assume: arn:aws:iam::628316168607:role/GitHubAction-SmartWishlist-DeployRole
           aws-region: us-east-1
 
       - name: Install infrastructure dependencies
