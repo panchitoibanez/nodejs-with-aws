@@ -7,10 +7,18 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as path from 'path';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as apprunner from '@aws-cdk/aws-apprunner-alpha';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 
 export class InfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    // Define a parameter for the Docker image tag ---
+    const imageTag = new cdk.CfnParameter(this, 'imageTag', {
+      type: 'String',
+      description: 'The tag of the Docker image to deploy.',
+    });
 
     // 1. DynamoDB Table (already defined)
     const table = new dynamodb.Table(this, 'SmartWishlistTable', {
@@ -79,9 +87,67 @@ export class InfrastructureStack extends cdk.Stack {
       batchSize: 1,
     }));
 
-    // 8. Outputs
+    // // 8. AWS App Runner Service for the NestJS App
+    // const apiService = new apprunner.Service(this, 'SmartWishlistApiService', {
+    //   source: apprunner.Source.fromAsset({
+    //     asset: new DockerImageAsset(this, 'SmartWishlistApiImage', {
+    //       directory: path.join(__dirname, '../../server'),
+    //     }),
+    //     imageConfiguration: { 
+    //       port: 3000,
+    //       environmentVariables: {
+    //         AWS_REGION: this.region,
+    //         COGNITO_USER_POOL_ID: userPool.userPoolId,
+    //         COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
+    //         SQS_QUEUE_URL: queue.queueUrl,
+    //       },
+    //     },
+    //   }),
+    //   cpu: apprunner.Cpu.QUARTER_VCPU, // 0.25 vCPU
+    //   memory: apprunner.Memory.HALF_GB, // 0.5 GB
+    //   autoDeploymentsEnabled: true,
+    // });
+
+    // 8a. ECR Repository for the NestJS App
+    const apiRepository = new ecr.Repository(this, 'SmartWishlistApiRepo', {
+      repositoryName: 'smart-wishlist-api',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteImages: true,
+    });
+
+    // 8b. AWS App Runner Service for the NestJS App
+    const apiService = new apprunner.Service(this, 'SmartWishlistApiService', {
+      source: apprunner.Source.fromEcr({ // <-- CHANGED from fromAsset
+        repository: apiRepository,
+        tagOrDigest: imageTag.valueAsString, // <-- Use the parameter
+        imageConfiguration: { 
+          port: 3000,
+          environmentVariables: {
+            AWS_REGION: this.region,
+            COGNITO_USER_POOL_ID: userPool.userPoolId,
+            COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
+            SQS_QUEUE_URL: queue.queueUrl,
+          },
+        },
+      }),
+      cpu: apprunner.Cpu.QUARTER_VCPU,
+      memory: apprunner.Memory.HALF_GB,
+      autoDeploymentsEnabled: true,
+    });
+
+    // Grant the App Runner service permissions to talk to other services
+    // Pass the service object directly to the grant methods.
+    table.grantReadWriteData(apiService);
+    queue.grantSendMessages(apiService);
+
+
+    // 9. Outputs
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
     new cdk.CfnOutput(this, 'QueueUrl', { value: queue.queueUrl });
+    new cdk.CfnOutput(this, 'ApiServiceUrl', {
+      value: apiService.serviceUrl,
+      description: 'The public URL of the Smart Wishlist API service',
+    });
   }
 }

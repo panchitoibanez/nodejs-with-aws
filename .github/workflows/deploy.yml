@@ -1,68 +1,101 @@
-name: Deploy Smart Wishlist API
+name: Deploy Smart Wishlist
 
-# This workflow runs on any push to the 'main' branch
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
 
-# These permissions are necessary for the workflow to authenticate with AWS
 permissions:
-  id-token: write
-  contents: read
+  id-token: write # Required for OIDC
+  contents: read # Required to checkout the code
 
 jobs:
-  # --- First Job: Run Tests ---
   test:
+    name: Lint & Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
+      
       - name: Install server dependencies
-        run: npm ci
-        working-directory: ./server
+        run: cd server && npm ci
 
       - name: Run linter
-        run: npm run lint
-        working-directory: ./server
+        run: cd server && npm run lint
 
       - name: Run tests
-        run: npm test
-        working-directory: ./server
+        run: cd server && npm run test
 
-  # --- Second Job: Deploy to AWS ---
-  deploy:
+  build-and-push:
+    name: Build & Push Docker Image
     runs-on: ubuntu-latest
-    needs: test # This job will only run if the 'test' job succeeds
+    needs: test # This job runs only after 'test' succeeds
+
+    # These outputs are passed to the next job
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::628316168607:role/GitHubAction-SmartWishlist-Deployer # 👈 UPDATE
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/smart-wishlist-api
+          tags: |
+            type=sha,prefix=,format=short
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server # Path to our Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    name: Deploy CDK Stack
+    runs-on: ubuntu-latest
+    needs: build-and-push # This job runs only after 'build-and-push' succeeds
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::628316168607:role/GitHubAction-SmartWishlist-DeployRole
-          aws-region: us-east-1 # Or the preferred region
+          role-to-assume: arn:aws:iam::628316168607:role/GitHubAction-SmartWishlist-Deployer # 👈 UPDATE
+          aws-region: us-east-1
 
       - name: Install infrastructure dependencies
-        run: npm ci
-        working-directory: ./infrastructure
+        run: cd infrastructure && npm ci
 
       - name: Install AWS CDK globally
         run: npm install -g aws-cdk
-
+      
       - name: Deploy CDK Stack
-        run: cdk deploy --require-approval never
-        working-directory: ./infrastructure
+        run: |
+          cd infrastructure
+          cdk deploy --require-approval never --parameters imageTag=${{ needs.build-and-push.outputs.image_tag }}
