@@ -95,7 +95,11 @@ jobs:
       - name: Install AWS CDK globally
         run: npm install -g aws-cdk
       
-      - name: Deploy CDK Stack
+      - name: Deploy CDK Stacks
         run: |
           cd infrastructure
-          cdk deploy --all --require-approval never --parameters imageTag=${{ needs.build-and-push.outputs.image_tag }}
+          # First, deploy the EcrStack. It has no parameters.
+          cdk deploy EcrStack --require-approval never
+
+          # Second, deploy the AppRunnerStack, passing the required parameter.
+          cdk deploy AppRunnerStack --require-approval never --parameters imageTag=${{ needs.build-and-push.outputs.image_tag }}
