@@ -103,4 +103,4 @@ jobs:
 
           # Second, deploy the AppRunnerStack, passing the required parameter.
           # We use --no-deps to prevent CDK from trying to redeploy EcrStack.
-          cdk deploy AppRunnerStack --require-approval never --no-deps --parameters imageTag=${{ needs.build-and-push.outputs.image_tag }}
+          cdk deploy AppRunnerStack --exclusively --require-approval never --parameters imageTag=${{ needs.build-and-push.outputs.image_tag }}
