@@ -11,7 +11,7 @@ export class EcrStack extends cdk.Stack {
     this.repository = new ecr.Repository(this, 'SmartWishlistApiRepo', {
       repositoryName: 'smart-wishlist-api',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
-      autoDeleteImages: true,
+      emptyOnDelete: true,
     });
 
     new cdk.CfnOutput(this, 'ApiRepositoryName', { 

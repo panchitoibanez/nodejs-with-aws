@@ -98,4 +98,4 @@ jobs:
       - name: Deploy CDK Stack
         run: |
           cd infrastructure
-          cdk deploy --require-approval never --parameters imageTag=${{ needs.build-and-push.outputs.image_tag }}
+          cdk deploy --all --require-approval never --parameters imageTag=${{ needs.build-and-push.outputs.image_tag }}
