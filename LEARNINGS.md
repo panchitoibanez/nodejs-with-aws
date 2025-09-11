@@ -94,5 +94,25 @@ This file is a personal knowledge base to track key concepts, commands, and reso
 - **Passwordless Authentication (OIDC)**: The secure, modern way to authenticate a CI/CD pipeline with a cloud provider. We created an IAM Role that explicitly trusts GitHub Actions for our specific repository, eliminating the need for long-lived secret keys.
 - **`npm ci`**: A command similar to `npm install`, but it is designed for automated environments. It's generally faster and more reliable as it installs dependencies exactly as defined in the `package-lock.json` file.
 
+## Week 7: Containerization & Deployment
+
+- **Docker**:
+  - **`Dockerfile`**: A text document that contains all the commands a user could call on the command line to assemble an image.
+  - **`.dockerignore`**: Works like `.gitignore`, preventing local files and directories from being copied into the Docker image, resulting in smaller and more secure images.
+  - **Multi-Stage Builds**: A technique to create smaller, more efficient production images by separating the build environment from the final runtime environment.
+- **Amazon ECR (Elastic Container Registry)**: A fully managed Docker container registry that makes it easy to store, manage, and deploy Docker container images.
+- **Amazon App Runner**: A fully managed service that provides the easiest way to build, deploy, and run containerized applications on AWS.
+- **Cloud-Native Builds**: The practice of building the container image within the CI/CD pipeline itself, rather than on a local developer machine. This ensures reproducibility and is a security best practice.
+  - **`Source.fromAsset()`**: The CDK method for building a container from a local directory. Requires Docker to be installed on the machine running `cdk deploy`.
+  - **`Source.fromEcr()`**: The CDK method for deploying a pre-existing container from an ECR repository. This is ideal for CI/CD pipelines.
+- **Advanced CDK Patterns**:
+  - **Multiple Stacks**: Splitting a large application into smaller, independent stacks (e.g., `EcrStack` and `AppRunnerStack`) improves organization and isolates failures.
+  - **Stack Dependencies**: Using `stackB.addDependency(stackA)` to ensure stacks are deployed in the correct order.
+  - **Passing Parameters**: Using `CfnParameter` to pass dynamic values (like an image tag) into a stack at deployment time.
+- **Advanced CI/CD Troubleshooting**:
+  - **`cdk deploy --all`**: Deploys all stacks in a CDK app.
+  - **`cdk deploy StackName --exclusively`**: Deploys *only* the specified stack, ignoring its dependencies. This is crucial for preventing parameter validation errors in multi-stack pipelines.
+  - **Manual Cleanup**: Sometimes a failed CloudFormation rollback leaves resources behind (like a CloudWatch Log Group). These must be manually deleted from the AWS Console before a subsequent deployment can succeed.
+
 ---
 *This document will be updated as we progress through the project.*
