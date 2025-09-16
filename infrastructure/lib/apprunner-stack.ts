@@ -7,7 +7,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as path from 'path';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
-//import * as apprunner from '@aws-cdk/aws-apprunner-alpha';
+import * as apprunner from '@aws-cdk/aws-apprunner-alpha';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 
 export interface AppRunnerStackProps extends cdk.StackProps {
@@ -83,7 +83,6 @@ export class AppRunnerStack extends cdk.Stack {
         batchSize: 1,
     }));
 
-    /*
     // Temporarily disabled due to AWS account activation issue with App Runner
     const apiService = new apprunner.Service(this, 'SmartWishlistApiService', {
       source: apprunner.Source.fromEcr({
@@ -99,25 +98,20 @@ export class AppRunnerStack extends cdk.Stack {
           },
         },
       }),
-      instanceConfiguration: {
-        cpu: apprunner.Cpu.QUARTER_VCPU,
-        memory: apprunner.Memory.HALF_GB,
-      },
+      cpu: apprunner.Cpu.QUARTER_VCPU,
+      memory: apprunner.Memory.HALF_GB,
       autoDeploymentsEnabled: true,
     });
     
     table.grantReadWriteData(apiService);
     queue.grantSendMessages(apiService);
-    */
 
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
     new cdk.CfnOutput(this, 'QueueUrl', { value: queue.queueUrl });
-    /*
     new cdk.CfnOutput(this, 'ApiServiceUrl', {
       value: apiService.serviceUrl,
       description: 'The public URL of the Smart Wishlist API service',
     });
-    */
   }
 }

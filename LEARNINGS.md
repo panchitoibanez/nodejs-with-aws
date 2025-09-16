@@ -5,114 +5,123 @@ This file is a personal knowledge base to track key concepts, commands, and reso
 ## Week 1: Foundations
 
 - **Git & GitHub**:
-  - `git init`: Initializes a new Git repository.
-  - `git add <file>`: Stages a file for the next commit.
-  - `git commit -m "message"`: Records the staged changes.
-  - `git push`: Uploads local commits to a remote repository.
-- **Node.js & TypeScript**:
-  - *Links to be added.*
+  - **Concept**: A distributed version control system. The core workflow involves moving changes from your working directory to a staging area (`git add`), committing them to your local repository (`git commit`), and then synchronizing them with a remote repository like GitHub (`git push`).
+  - **Nested Repository**: If a sub-directory has its own `.git` folder, the parent repository treats it as a submodule. This can complicate tracking. Fixed by removing the nested `.git` directory (`rm -rf path/to/sub/.git`).
+  - **Conventional Commits**: A specification for commit messages that creates an explicit history, making it easier to automate changelogs and understand changes. (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
+  - **[Official Git Documentation](https://git-scm.com/doc)**
+  - **[Conventional Commits Specification](https://www.conventionalcommits.org/)**
+
 - **NestJS Fundamentals**:
-  - *Links to be added.*
-- **Docker**:
-  - *Links to be added.*
+  - **Concept**: A progressive Node.js framework for building efficient, reliable, and scalable server-side applications. It uses TypeScript and is heavily inspired by Angular.
+  - **Core Components**:
+    - **Modules**: Organize code into cohesive blocks of functionality.
+    - **Controllers**: Handle incoming requests and return responses.
+    - **Services**: Handle business logic, which is then injected into controllers.
+  - **[Official NestJS Documentation](https://docs.nestjs.com/)**
+
 - **Code Quality**:
-  - **ESLint**: A tool for identifying and reporting on patterns found in ECMAScript/JavaScript code, with the goal of making code more consistent and avoiding bugs.
-  - **Prettier**: An opinionated code formatter that enforces a consistent style by parsing your code and re-printing it.
-  - **Linting Fixes**: Solved a "floating promise" in `main.ts` by adding a `.catch()` block. Fixed "unsafe" type errors in e2e tests by simplifying type definitions and correcting the `supertest` import.
-- **Git**:
-  - **Nested Repository**: If a sub-directory has its own `.git` folder, the parent repository treats it as a submodule. This can be fixed by removing the nested `.git` directory (`rm -rf path/to/sub/.git`).
-  - **Conventional Commits**: A specification for adding human and machine-readable meaning to commit messages. (e.g., `feat:`, `fix:`, `chore:`). [Link](https://www.conventionalcommits.org/)
+  - **ESLint**: A pluggable and configurable linter tool for statically analyzing code to quickly find problems. It helps enforce coding standards and avoid common errors.
+  - **Prettier**: An opinionated code formatter that enforces a consistent style by parsing your code and re-printing it. It removes all original styling and ensures that all outputted code conforms to a consistent style.
+  - **Linting Fixes**: Solved a "floating promise" in `main.ts` by adding a `.catch()` block to handle potential errors from the application startup. Fixed "unsafe" type errors in e2e tests by simplifying type definitions and correcting the `supertest` import.
+  - **[ESLint Official Website](https://eslint.org/)**
+  - **[Prettier Official Website](https://prettier.io/)**
 
 ## Week 2: User Authentication
 
-- **AWS CLI**: The command-line tool to manage AWS services. We used it for installation, configuration (`aws configure`), and creating Cognito resources. [Official Docs](https://aws.amazon.com/cli/)
-- **IAM (Identity and Access Management)**: The AWS service for managing user access and permissions. We created an IAM user with programmatic access (`Access Key ID` & `Secret Access Key`) for our development machine, which is a security best practice.
-- **AWS Cognito**: A managed user identity service.
-  - **User Pool**: A user directory in Cognito. It handles user registration, authentication, and profile storage.
-  - **User Pool Client**: An entity within a User Pool that has permission to call unauthenticated API operations (like sign-up and sign-in).
-- **NestJS ConfigModule**: A module to manage application configuration and environment variables. We used it to load our Cognito IDs from a `.env` file.
-- **DTOs (Data Transfer Objects)**: Classes that define the shape of data for network requests. Used with `class-validator` decorators, they provide automatic request payload validation.
-- **Cognito User States**:
-  - **`UNCONFIRMED`**: The initial state of a user after sign-up, before they have verified their email.
-  - **`UserNotConfirmedException`**: The error Cognito returns when an unconfirmed user tries to sign in.
-  - **`admin-confirm-sign-up`**: The AWS CLI command to manually confirm a user, useful for development.
-- **JWT (JSON Web Token)**: A standard for securely transmitting information between parties as a JSON object. We get an `AccessToken`, `IdToken`, and `RefreshToken` from Cognito.
-- **NestJS Guards**: Classes that determine whether a given request will be handled by the route handler or not. They are used to implement authorization.
-  - **`@UseGuards()`**: The decorator to apply a guard to a specific endpoint.
-- **JWT Verification**: The process of validating a token's signature to ensure it was issued by a trusted source (our Cognito User Pool) and has not been tampered with.
-  - **JWKS (JSON Web Key Set)**: A set of public keys used to verify JWT signatures. We fetch this from a public URL provided by Cognito.
+- **AWS CLI**:
+  - **Concept**: A unified command-line tool to manage your AWS services. `aws configure` is a key command that sets up your credentials in `~/.aws/credentials` and default region in `~/.aws/config`.
+  - **[Official AWS CLI Documentation](https://aws.amazon.com/cli/)**
+
+- **IAM (Identity and Access Management)**:
+  - **Concept**: The AWS service for securely managing access to AWS services and resources.
+  - **User vs. Role**: An IAM User has permanent credentials and represents a person or application. An IAM Role is an identity with permissions that can be assumed by trusted entities, which is more secure and temporary. We created a User with programmatic access for local development.
+  - **[Official IAM Documentation](https://docs.aws.amazon.com/iam/)**
+
+- **AWS Cognito**:
+  - **Concept**: A managed user identity and data synchronization service.
+  - **User Pool**: A user directory in Cognito. It handles user registration, authentication, profile storage, and federation with other identity providers.
+  - **User Pool Client**: An entity within a User Pool that has permission to call unauthenticated API operations (like sign-up and sign-in) and defines the authentication flows (e.g., allowing user/password auth).
+  - **[Official Cognito Documentation](https://docs.aws.amazon.com/cognito/index.html)**
+
+- **NestJS & Configuration**:
+  - **ConfigModule**: A module to manage application configuration. It can load variables from `.env` files and makes them accessible throughout the application via an injectable `ConfigService`.
+  - **DTOs (Data Transfer Objects)**: Classes that define the shape of data for network requests. Used with `class-validator` and `class-transformer`, they provide automatic, declarative validation of request payloads.
+  - **[NestJS ConfigModule Docs](https://docs.nestjs.com/techniques/configuration)**
+  - **[class-validator on npm](https://www.npmjs.com/package/class-validator)**
+
+- **JWT (JSON Web Token)**:
+  - **Concept**: An open standard (RFC 7519) for securely transmitting information between parties as a JSON object. It is stateless, meaning the server does not need to store session information. A JWT consists of three parts: Header, Payload, and Signature.
+  - **JWT Verification**: To ensure a token is valid, we verify its signature. This involves fetching a public key from a JWKS (JSON Web Key Set) URL provided by the issuer (Cognito) and using it to validate the token's signature.
+  - **[JWT Official Website](https://jwt.io/)**
+
+- **NestJS Guards**:
+  - **Concept**: Classes that implement the `CanActivate` interface to determine if a given request will be handled by the route handler. They are the primary tool for implementing authorization.
+  - **[Official NestJS Guards Documentation](https://docs.nestjs.com/guards)**
 
 ## Week 3: Core Wishlist API
 
-- **Amazon DynamoDB**: A fully managed, serverless, NoSQL database.
-  - **Single-Table Design**: A common DynamoDB pattern where different types of data are stored in a single table, distinguished by their Primary Keys.
-  - **PK (Partition Key) / SK (Sort Key)**: The composite primary key used to uniquely identify items and model one-to-many relationships.
-  - **Billing Mode**: We used `PAY_PER_REQUEST`, which is ideal for development and applications with unpredictable workloads.
-- **DynamoDB Document Client**: A higher-level client from the AWS SDK (`@aws-sdk/lib-dynamodb`) that allows working with native JavaScript objects instead of the low-level DynamoDB format.
-- **CRUD with DynamoDB**:
-  - **Create**: `PutCommand` inserts or replaces an entire item.
-  - **Read**: `QueryCommand` efficiently retrieves a collection of items with the same Partition Key.
-  - **Update**: `UpdateCommand` modifies specific attributes of an existing item. We used `UpdateExpression` and `ConditionExpression` for safe updates.
-  - **Delete**: `DeleteCommand` removes an item. We used `ConditionExpression` to ensure the item exists before deleting.
-- **NestJS Route Parameters**:
-  - **`@Param('id')`**: Decorator to extract a parameter from the URL (e.g., the `:id` in `@Delete(':id')`).
-  - **`ParseUUIDPipe`**: A built-in pipe to automatically validate that a route parameter is a valid UUID.
+- **Amazon DynamoDB**:
+  - **Concept**: A fully managed, serverless, key-value NoSQL database designed for high-performance applications at any scale.
+  - **Single-Table Design**: A pattern where different types of data are stored in a single table, using generic primary key names (like `PK` and `SK`) to model complex relationships and enable efficient data retrieval with a single query.
+  - **Document Client**: A higher-level client in the AWS SDK (`@aws-sdk/lib-dynamodb`) that automatically handles the marshalling of JavaScript objects to and from the low-level DynamoDB data format.
+  - **[Official DynamoDB Documentation](https://docs.aws.amazon.com/dynamodb/)**
+
+- **NestJS Pipes**:
+  - **Concept**: Classes that implement the `PipeTransform` interface. They operate on the arguments being processed by a route handler and are used for transformation (e.g., string to integer) and validation (e.g., checking if an argument is valid). `ParseUUIDPipe` is a built-in pipe that validates a string is a UUID.
+  - **[Official NestJS Pipes Documentation](https://docs.nestjs.com/pipes)**
 
 ## Week 4: Asynchronous Processing
 
-- **Decoupled Architecture**: A design principle where different components of a system are loosely connected. This improves scalability and resilience. We decoupled the slow web scraping from the initial user request.
-- **AWS SQS (Simple Queue Service)**: A fully managed message queuing service. It enables asynchronous communication between different software components. We used it to send "scrape URL" jobs to a background worker.
-- **AWS Lambda**: A serverless compute service that runs your code in response to triggers. This is the core of our background processing.
-- **IAM Roles for Services**: Instead of giving credentials to a service, we create an IAM Role that the service "assumes". This is a secure way to grant permissions.
+- **Decoupled Architecture**:
+  - **Concept**: A design principle where components are loosely connected, communicating asynchronously (e.g., via a message queue). This improves scalability, resilience, and fault tolerance, as the failure of one component is less likely to cascade to others.
+- **AWS SQS (Simple Queue Service)**:
+  - **Concept**: A fully managed message queuing service for decoupling and scaling microservices, distributed systems, and serverless applications. We used a standard queue for our background jobs.
+  - **[Official SQS Documentation](https://docs.aws.amazon.com/sqs/)**
+- **AWS Lambda**:
+  - **Concept**: A serverless, event-driven compute service that lets you run code for virtually any type of application or backend service without provisioning or managing servers. You only pay for the compute time you consume.
+  - **[Official Lambda Documentation](https://docs.aws.amazon.com/lambda/)**
+- **IAM Roles for Services**:
+  - **Concept**: Instead of embedding credentials in a service, we create an IAM Role that the service "assumes". This is the standard, secure way to grant AWS services permissions to interact with each other.
   - **Trust Policy**: Defines which principals (e.g., `lambda.amazonaws.com`) are allowed to assume the role.
-  - **Permissions Policy**: Defines what actions the principal is allowed to perform on which resources.
-- **Lambda Event Source Mapping**: The trigger that connects an event source (like an SQS queue) to a Lambda function, causing the function to be invoked when new events occur.
+  - **Permissions Policy**: Defines what actions the role is allowed to perform.
+- **Lambda Event Source Mapping**:
+  - **Concept**: The trigger that connects an event source (like SQS) to a Lambda function. It is a resource that reads items from the source and invokes the Lambda function synchronously.
+  - **[Official Event Source Mapping Documentation](https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventsourcemapping.html)**
 
 ## Week 5: Infrastructure as Code (IaC)
 
-- **AWS CDK (Cloud Development Kit)**: A framework for defining your cloud infrastructure in code using familiar programming languages. This enables repeatability, version control, and automation.
-- **CDK Concepts**:
-  - **Constructs**: The building blocks of the CDK. Each construct represents an AWS resource (e.g., `new dynamodb.Table(...)`).
-  - **Stack**: A collection of related constructs that are deployed together as a single unit (our `InfrastructureStack`).
-  - **`cdk bootstrap`**: A one-time command that provisions the necessary resources (S3 bucket, IAM roles) for the CDK to perform deployments in an AWS account/region.
-  - **`cdk synth`**: Synthesizes the CDK code into a low-level AWS CloudFormation template.
-  - **`cdk diff`**: Compares the stack defined in your code against what's currently deployed in AWS.
-  - **`cdk deploy`**: Deploys your stack to AWS.
-- **CDK Best Practices**:
-  - **Removal Policy**: Setting `removalPolicy: cdk.RemovalPolicy.DESTROY` is useful for development stacks to ensure easy cleanup.
-  - **High-Level Grant Methods**: Using methods like `table.grantWriteData(role)` is a secure and readable way to manage IAM permissions.
-  - **`CfnOutput`**: Used to export important values (like resource IDs and URLs) from your stack after deployment.
+- **AWS CDK (Cloud Development Kit)**:
+  - **Concept**: A framework for defining cloud infrastructure in code and provisioning it through AWS CloudFormation. It allows you to use familiar programming languages to model your application's infrastructure.
+  - **CDK App Lifecycle**: You write CDK code -> `cdk synth` synthesizes it into a CloudFormation template -> `cdk deploy` deploys that template to your AWS account.
+  - **Constructs**: The building blocks of the CDK. L1 constructs map directly to CloudFormation resources. L2/L3 constructs are higher-level abstractions with sensible defaults and helper methods (like `.grantReadWriteData()`).
+  - **[Official CDK Documentation](https://docs.aws.amazon.com/cdk/v2/guide/home.html)**
 
-## Week 6: Automation & CI/CD
+## Week 6 & 7: CI/CD, Containerization & Deployment
 
-- **GitHub Actions**: A CI/CD platform integrated into GitHub. We used it to automate our testing and deployment processes.
-- **Workflow**: A set of automated jobs defined in a YAML file (e.g., `deploy.yml`).
-  - **`on: push: branches: [main]`**: The trigger that starts the workflow.
-  - **`jobs`**: A workflow is made up of one or more jobs that run independently by default.
-  - **`needs: test`**: A keyword to create a dependency, ensuring one job runs only after another succeeds.
-  - **`working-directory`**: A directive to run a command in a specific subdirectory.
-- **Passwordless Authentication (OIDC)**: The secure, modern way to authenticate a CI/CD pipeline with a cloud provider. We created an IAM Role that explicitly trusts GitHub Actions for our specific repository, eliminating the need for long-lived secret keys.
-- **`npm ci`**: A command similar to `npm install`, but it is designed for automated environments. It's generally faster and more reliable as it installs dependencies exactly as defined in the `package-lock.json` file.
+- **GitHub Actions & CI/CD**:
+  - **Concept**: A CI/CD platform to automate your build, test, and deployment pipeline. A **workflow** is defined in YAML and is triggered by events. Workflows run on **runners** and are composed of **jobs**, which contain a sequence of **steps**.
+  - **OIDC (OpenID Connect)**: The secure, modern way to authenticate a CI/CD pipeline. GitHub Actions gets a temporary token from its OIDC provider, which AWS is configured to trust, and exchanges it for temporary AWS credentials, eliminating the need for long-lived secrets.
+  - **`npm ci`**: The recommended command for installing dependencies in automated environments. It is faster and more reliable than `npm install` because it installs dependencies directly from the `package-lock.json` file.
+  - **[Official GitHub Actions Documentation](https://docs.github.com/en/actions)**
+  - **[Configuring OIDC with AWS](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)**
 
-## Week 7: Containerization & Deployment
+- **Docker & Containerization**:
+  - **`Dockerfile`**: A script containing a series of instructions to assemble a Docker image.
+  - **Multi-Stage Builds**: A `Dockerfile` pattern that uses multiple `FROM` statements. It allows you to use one stage with a full build environment to compile your code, then copy only the necessary artifacts to a smaller, leaner production stage, resulting in a much smaller final image.
+  - **[Official Dockerfile Reference](https://docs.docker.com/engine/reference/builder/)**
 
-- **Docker**:
-  - **`Dockerfile`**: A text document that contains all the commands a user could call on the command line to assemble an image.
-  - **`.dockerignore`**: Works like `.gitignore`, preventing local files and directories from being copied into the Docker image, resulting in smaller and more secure images.
-  - **Multi-Stage Builds**: A technique to create smaller, more efficient production images by separating the build environment from the final runtime environment.
-- **Amazon ECR (Elastic Container Registry)**: A fully managed Docker container registry that makes it easy to store, manage, and deploy Docker container images.
-- **Amazon App Runner**: A fully managed service that provides the easiest way to build, deploy, and run containerized applications on AWS.
-- **Cloud-Native Builds**: The practice of building the container image within the CI/CD pipeline itself, rather than on a local developer machine. This ensures reproducibility and is a security best practice.
-  - **`Source.fromAsset()`**: The CDK method for building a container from a local directory. Requires Docker to be installed on the machine running `cdk deploy`.
-  - **`Source.fromEcr()`**: The CDK method for deploying a pre-existing container from an ECR repository. This is ideal for CI/CD pipelines.
-- **Advanced CDK Patterns**:
-  - **Multiple Stacks**: Splitting a large application into smaller, independent stacks (e.g., `EcrStack` and `AppRunnerStack`) improves organization and isolates failures.
-  - **Stack Dependencies**: Using `stackB.addDependency(stackA)` to ensure stacks are deployed in the correct order.
-  - **Passing Parameters**: Using `CfnParameter` to pass dynamic values (like an image tag) into a stack at deployment time.
-- **Advanced CI/CD Troubleshooting**:
-  - **`cdk deploy --all`**: Deploys all stacks in a CDK app.
-  - **`cdk deploy StackName --exclusively`**: Deploys *only* the specified stack, ignoring its dependencies. This is crucial for preventing parameter validation errors in multi-stack pipelines.
-  - **Manual Cleanup**: Sometimes a failed CloudFormation rollback leaves resources behind (like a CloudWatch Log Group). These must be manually deleted from the AWS Console before a subsequent deployment can succeed.
+- **Amazon ECR (Elastic Container Registry)**:
+  - **Concept**: A fully managed, private container registry for your Docker images. It is integrated with AWS IAM, providing secure and fine-grained access control.
+  - **[Official ECR Documentation](https://docs.aws.amazon.com/ecr/)**
+
+- **Amazon App Runner**:
+  - **Concept**: A fully managed service that provides the easiest way to deploy containerized web applications and APIs at scale. It handles traffic load balancing, scaling, and health checks automatically.
+  - **[Official App Runner Documentation](https://docs.aws.amazon.com/apprunner/)**
+
+- **Advanced CDK & Deployment Patterns**:
+  - **Multiple Stacks**: Splitting a large application into smaller, independent stacks (`EcrStack`, `AppRunnerStack`) improves organization, allows for independent deployment, and isolates failures. `stackB.addDependency(stackA)` ensures correct deployment order.
+  - **`cdk deploy StackName --exclusively`**: Deploys *only* the specified stack, ignoring its dependencies. This is crucial for preventing parameter validation errors in multi-stack CI/CD pipelines.
+  - **Manual Cleanup**: A failed CloudFormation rollback can leave resources behind (e.g., CloudWatch Log Groups). These "orphaned" resources must be manually deleted from the AWS Console before a subsequent deployment can succeed.
 
 ---
 *This document will be updated as we progress through the project.*
