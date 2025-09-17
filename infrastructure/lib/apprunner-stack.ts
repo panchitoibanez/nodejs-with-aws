@@ -93,7 +93,6 @@ export class AppRunnerStack extends cdk.Stack {
       memorySize: 512,
       timeout: cdk.Duration.seconds(30),
       environment: {
-        AWS_REGION: this.region,
         COGNITO_USER_POOL_ID: userPool.userPoolId,
         COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
         SQS_QUEUE_URL: queue.queueUrl,
