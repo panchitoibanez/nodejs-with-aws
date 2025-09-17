@@ -7,8 +7,10 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as path from 'path';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
-import * as apprunner from '@aws-cdk/aws-apprunner-alpha';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
+import { HttpApi, CorsHttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
+import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+
 
 export interface AppRunnerStackProps extends cdk.StackProps {
   readonly apiRepository: ecr.IRepository;
@@ -83,35 +85,51 @@ export class AppRunnerStack extends cdk.Stack {
         batchSize: 1,
     }));
 
-    // Temporarily disabled due to AWS account activation issue with App Runner
-    const apiService = new apprunner.Service(this, 'SmartWishlistApiService', {
-      source: apprunner.Source.fromEcr({
-        repository: props.apiRepository,
+    // --- NEW: API Lambda Function ---
+    const apiLambda = new lambda.DockerImageFunction(this, 'ApiLambdaFunction', {
+      code: lambda.DockerImageCode.fromEcr(props.apiRepository, {
         tagOrDigest: imageTag.valueAsString,
-        imageConfiguration: { 
-          port: 3000,
-          environmentVariables: {
-            AWS_REGION: this.region,
-            COGNITO_USER_POOL_ID: userPool.userPoolId,
-            COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
-            SQS_QUEUE_URL: queue.queueUrl,
-          },
-        },
       }),
-      cpu: apprunner.Cpu.QUARTER_VCPU,
-      memory: apprunner.Memory.HALF_GB,
-      autoDeploymentsEnabled: true,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(30),
+      environment: {
+        AWS_REGION: this.region,
+        COGNITO_USER_POOL_ID: userPool.userPoolId,
+        COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
+        SQS_QUEUE_URL: queue.queueUrl,
+        DYNAMODB_TABLE_NAME: table.tableName,
+      },
+    });
+
+    table.grantReadWriteData(apiLambda);
+    queue.grantSendMessages(apiLambda);
+
+    // --- NEW: API Gateway to trigger the Lambda ---
+    const httpApi = new HttpApi(this, 'SmartWishlistHttpApi', {
+      apiName: 'smart-wishlist-api',
+      corsPreflight: {
+        allowHeaders: ['Content-Type', 'Authorization'],
+        allowMethods: [
+          CorsHttpMethod.GET,
+          CorsHttpMethod.POST,
+          CorsHttpMethod.PATCH,
+          CorsHttpMethod.DELETE,
+          CorsHttpMethod.OPTIONS,
+        ],
+        allowOrigins: ['*'], // In production, restrict this to your frontend's domain
+      },
+      defaultIntegration: new HttpLambdaIntegration(
+        'DefaultIntegration',
+        apiLambda,
+      ),
     });
     
-    table.grantReadWriteData(apiService);
-    queue.grantSendMessages(apiService);
-
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
     new cdk.CfnOutput(this, 'QueueUrl', { value: queue.queueUrl });
-    new cdk.CfnOutput(this, 'ApiServiceUrl', {
-      value: apiService.serviceUrl,
-      description: 'The public URL of the Smart Wishlist API service',
+    new cdk.CfnOutput(this, 'ApiUrl', {
+      value: httpApi.url!,
+      description: 'The public URL of the Smart Wishlist API Gateway',
     });
   }
 }
