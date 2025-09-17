@@ -25,6 +25,8 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 
-# Command to run the application.
-# The format is <path-to-file>.<exported-handler-function>
+# Debug: List the contents of dist directory
+RUN ls -la dist/
+
+# Set the Lambda handler
 CMD [ "dist/lambda.handler" ]
