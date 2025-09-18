@@ -114,14 +114,34 @@ This file is a personal knowledge base to track key concepts, commands, and reso
   - **Concept**: A fully managed, private container registry for your Docker images. It is integrated with AWS IAM, providing secure and fine-grained access control.
   - **[Official ECR Documentation](https://docs.aws.amazon.com/ecr/)**
 
-- **Amazon App Runner**:
-  - **Concept**: A fully managed service that provides the easiest way to deploy containerized web applications and APIs at scale. It handles traffic load balancing, scaling, and health checks automatically.
-  - **[Official App Runner Documentation](https://docs.aws.amazon.com/apprunner/)**
+- **AWS Lambda with Container Images**:
+  - **Concept**: Lambda can run containerized applications using Docker images stored in ECR. This allows for larger applications and more complex dependencies than traditional Lambda packages.
+  - **Lambda Base Images**: AWS provides optimized base images (`public.ecr.aws/lambda/nodejs:20-x86_64`) that include the Lambda runtime interface and are specifically designed for Lambda execution.
+  - **Serverless Express Integration**: The `@codegenie/serverless-express` library bridges Express.js applications (like NestJS) with the Lambda runtime, handling the translation between HTTP requests and Lambda events.
+  - **[Official Lambda Container Images Documentation](https://docs.aws.amazon.com/lambda/latest/dg/images-create.html)**
+
+- **API Gateway HTTP API**:
+  - **Concept**: A lightweight, high-performance API Gateway that provides HTTP endpoints for your Lambda functions. It's simpler and cheaper than the REST API Gateway.
+  - **Default Integration**: A single `$default` route can forward all requests to a Lambda function, letting the application handle routing internally (perfect for NestJS).
+  - **CORS Configuration**: Built-in CORS support for cross-origin requests from web applications.
+  - **[Official API Gateway HTTP API Documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html)**
+
+- **NestJS Serverless Architecture**:
+  - **Lambda Handler**: A dedicated `lambda.ts` file that bootstraps the NestJS application and handles Lambda events using `serverless-express`.
+  - **Express Adapter**: NestJS uses the Express adapter to integrate with the Express.js instance that `serverless-express` expects.
+  - **Caching**: The Lambda handler caches the initialized NestJS application to avoid cold start overhead on subsequent invocations.
+  - **Environment Detection**: The application can detect if it's running in Lambda vs. local development using environment variables.
 
 - **Advanced CDK & Deployment Patterns**:
   - **Multiple Stacks**: Splitting a large application into smaller, independent stacks (`EcrStack`, `AppRunnerStack`) improves organization, allows for independent deployment, and isolates failures. `stackB.addDependency(stackA)` ensures correct deployment order.
   - **`cdk deploy StackName --exclusively`**: Deploys *only* the specified stack, ignoring its dependencies. This is crucial for preventing parameter validation errors in multi-stack CI/CD pipelines.
   - **Manual Cleanup**: A failed CloudFormation rollback can leave resources behind (e.g., CloudWatch Log Groups). These "orphaned" resources must be manually deleted from the AWS Console before a subsequent deployment can succeed.
+
+- **Real-World Problem Solving**:
+  - **Service Activation Issues**: Some AWS services (like App Runner) may require account-level activation or have restrictions on new accounts. This can block deployments even with correct code and permissions.
+  - **Architecture Pivots**: When encountering service limitations, the ability to pivot to alternative architectures (App Runner → Lambda + API Gateway) demonstrates senior-level problem-solving skills.
+  - **Library Selection**: Choosing the correct libraries (`@vendia/serverless-express` vs. alternatives) is crucial for stability and compatibility with AWS services.
+  - **Base Image Selection**: Using AWS-provided Lambda base images instead of generic Docker images ensures proper runtime integration and compatibility.
 
 ---
 *This document will be updated as we progress through the project.*

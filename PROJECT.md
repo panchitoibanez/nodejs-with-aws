@@ -17,7 +17,7 @@ The "Smart Wishlist" is a cloud-native application that allows users to create a
 
 The application is designed using a decoupled, microservices-oriented architecture running entirely on serverless AWS services. This design prioritizes scalability, resilience, and cost-effectiveness.
 
-- **Synchronous Operations (API)**: User-facing requests (auth, wishlist management) are handled by a containerized NestJS application running on **AWS App Runner**. This service handles all business logic and interacts directly with the **DynamoDB** database and **Cognito** for authentication.
+- **Synchronous Operations (API)**: User-facing requests (auth, wishlist management) are handled by a containerized NestJS application running on **AWS Lambda** with **API Gateway**. This service handles all business logic and interacts directly with the **DynamoDB** database and **Cognito** for authentication.
 - **Asynchronous Operations (Scraping)**: When a user adds a new item, the NestJS application does not perform the scraping directly. Instead, it sends a message containing the job details to an **SQS Queue**. An **AWS Lambda** function is subscribed to this queue, which processes the job, performs the scraping, and updates the item's status in DynamoDB. This ensures the API remains fast and responsive, regardless of how long the scraping process takes.
 
 ## 3. Tech Stack & Justification
@@ -26,7 +26,8 @@ The application is designed using a decoupled, microservices-oriented architectu
 - **Authentication**: **AWS Cognito** - A fully managed identity service that handles all aspects of user sign-up, sign-in, and JWT management, offloading complex security work.
 - **Database**: **Amazon DynamoDB** - A serverless NoSQL database that offers single-digit millisecond performance at any scale. Its key-value nature and pay-per-request model are ideal for our access patterns.
 - **Asynchronous Processing**: **AWS SQS & Lambda** - A classic serverless pattern. SQS provides a durable, reliable message queue, while Lambda offers cost-effective, event-driven compute for our background scraper.
-- **Compute**: **AWS App Runner** - A fully managed container service that simplifies the deployment and scaling of our NestJS application, handling load balancing and health checks automatically.
+- **Compute**: **AWS Lambda** - A serverless compute service that runs our containerized NestJS application on-demand, providing automatic scaling and cost-effective execution.
+- **API Gateway**: **AWS API Gateway HTTP API** - A lightweight, high-performance API Gateway that provides HTTP endpoints for our Lambda function, handling routing and CORS configuration.
 - **Container Registry**: **Amazon ECR** - A secure, private registry for our Docker images, tightly integrated with other AWS services.
 - **Infrastructure as Code**: **AWS CDK (TypeScript)** - Allows us to define our entire cloud infrastructure in a familiar programming language, enabling version control, repeatability, and automated deployments.
 - **Containerization**: **Docker** - The standard for packaging our application and its dependencies into a portable, reproducible container image.
@@ -61,9 +62,11 @@ The application is designed using a decoupled, microservices-oriented architectu
   - Mastered core CDK commands (`bootstrap`, `synth`, `diff`, `deploy`).
 
 - [x] **Week 6 & 7: Automation, CI/CD & Containerization**
-  - Wrote a multi-stage `Dockerfile` to create an optimized production container.
+  - Wrote a multi-stage `Dockerfile` to create an optimized production container using AWS Lambda base images.
   - Built a multi-job GitHub Actions workflow for CI/CD.
   - Implemented a secure, passwordless OIDC connection between GitHub and AWS.
   - Configured a cloud-native build process to create and push the Docker image from the CI/CD pipeline.
   - Refactored the CDK application into multiple stacks (`EcrStack`, `AppRunnerStack`) with dependencies to solve deployment race conditions.
+  - **Architecture Pivot**: Successfully pivoted from AWS App Runner to AWS Lambda + API Gateway due to account activation limitations, demonstrating real-world problem-solving skills.
+  - Implemented NestJS serverless architecture using `@codegenie/serverless-express` for Lambda integration.
   - Fully automated the deployment of all backend infrastructure and container images.
