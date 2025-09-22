@@ -11,6 +11,7 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { randomUUID } from 'crypto';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class WishlistService {
@@ -18,7 +19,10 @@ export class WishlistService {
   private readonly tableName: string;
   private readonly sqsClient: SQSClient;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly notificationsService: NotificationsService,
+  ) {
     const client = new DynamoDBClient({
       region: this.configService.get<string>('AWS_REGION'),
     });
@@ -48,6 +52,14 @@ export class WishlistService {
     });
 
     await this.docClient.send(command);
+
+    // Send notification about wishlist creation
+    try {
+      await this.notificationsService.notifyWishlistCreated(userId, wishlistId, name);
+    } catch (error) {
+      console.error('Error sending wishlist creation notification:', error);
+      // Don't fail the operation if notification fails
+    }
 
     return { wishlistId, name };
   }
@@ -172,6 +184,14 @@ export class WishlistService {
     try {
       // We can run these in parallel for better performance
       await Promise.all([this.docClient.send(putCommand), this.sqsClient.send(sendMessageCommand)]);
+
+      // Send notification about item addition
+      try {
+        await this.notificationsService.notifyItemAdded(userId, wishlistId, itemId, url);
+      } catch (notificationError) {
+        console.error('Error sending item addition notification:', notificationError);
+        // Don't fail the operation if notification fails
+      }
     } catch (error) {
       // The old error handling is no longer needed here as we checked above
       console.error('Error adding item to wishlist:', error);

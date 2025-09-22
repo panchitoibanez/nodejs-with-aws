@@ -8,10 +8,7 @@ import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 
 let cachedServer: ReturnType<typeof serverlessExpress>;
 
-export const handler = async (
-  event: APIGatewayProxyEvent,
-  context: Context,
-): Promise<unknown> => {
+export const handler = async (event: APIGatewayProxyEvent, context: Context): Promise<unknown> => {
   if (!cachedServer) {
     const expressApp = express();
     const nestApp = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));

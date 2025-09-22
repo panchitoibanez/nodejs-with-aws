@@ -143,5 +143,47 @@ This file is a personal knowledge base to track key concepts, commands, and reso
   - **Library Selection**: Choosing the correct libraries (`@vendia/serverless-express` vs. alternatives) is crucial for stability and compatibility with AWS services.
   - **Base Image Selection**: Using AWS-provided Lambda base images instead of generic Docker images ensures proper runtime integration and compatibility.
 
+## Week 8: Cloud Storage & Notifications
+
+- **Amazon S3 (Simple Storage Service)**:
+  - **Concept**: A highly scalable, durable, and secure object storage service designed to store and retrieve any amount of data from anywhere on the web.
+  - **Key Features**: Unlimited storage capacity, 99.999999999% durability, server-side encryption, lifecycle policies, and global access.
+  - **Use Cases**: Product image storage, user profile pictures, document attachments, and static asset hosting.
+  - **Security**: Block public access, IAM-based access control, signed URLs for temporary access, and VPC endpoints for private access.
+  - **Cost Optimization**: Lifecycle policies for automatic cleanup, intelligent tiering for unknown access patterns, and appropriate storage class selection.
+  - **[Official S3 Documentation](https://docs.aws.amazon.com/s3/)**
+
+- **Amazon SNS (Simple Notification Service)**:
+  - **Concept**: A fully managed messaging service for both application-to-application (A2A) and application-to-person (A2P) communication.
+  - **Key Features**: Pub/sub messaging, multiple protocols (email, SMS, HTTP, Lambda, SQS), high availability, and global reach.
+  - **Use Cases**: Wishlist notifications, product update alerts, system monitoring, and user engagement.
+  - **Message Publishing**: Programmatic publishing using AWS SDKs, message attributes for filtering and routing, and batch publishing for efficiency.
+  - **Delivery Guarantees**: At-least-once delivery for standard topics, exactly-once delivery for FIFO topics, and retry mechanisms with exponential backoff.
+  - **[Official SNS Documentation](https://docs.aws.amazon.com/sns/)**
+
+- **File Upload Handling**:
+  - **Multer**: A Node.js middleware for handling `multipart/form-data`, which is primarily used for uploading files. It adds a `file` or `files` object to the request.
+  - **File Validation**: Type validation (MIME types), size limits, and security checks to prevent malicious uploads.
+  - **NestJS Integration**: Using `@UseInterceptors(FileInterceptor('file'))` to handle file uploads in controllers.
+  - **[Multer Documentation](https://github.com/expressjs/multer)**
+
+- **Signed URLs & Security**:
+  - **Signed URLs**: Time-limited URLs that provide secure access to private S3 objects without requiring AWS credentials.
+  - **Access Control**: User-specific access control to ensure users can only access their own files.
+  - **Security Best Practices**: File type validation, size limits, and proper access control for uploaded content.
+  - **[S3 Signed URLs Documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ShareObjectPreSignedURL.html)**
+
+- **Notification Patterns**:
+  - **Event-Driven Architecture**: Sending notifications based on user actions and system events.
+  - **Message Filtering**: Using message attributes to filter and route notifications appropriately.
+  - **Error Handling**: Graceful handling of notification failures without affecting core functionality.
+  - **User Preferences**: Designing notification systems that respect user preferences and frequency.
+
+- **Advanced CDK Patterns**:
+  - **Multiple Stack Dependencies**: Managing dependencies between EcrStack and AppRunnerStack.
+  - **Environment Variables**: Passing configuration between stacks and Lambda functions.
+  - **Resource Permissions**: Granting appropriate permissions for S3 and SNS access.
+  - **Stack Outputs**: Using CDK outputs to share resource information between stacks.
+
 ---
 *This document will be updated as we progress through the project.*

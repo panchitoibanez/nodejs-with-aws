@@ -17,8 +17,10 @@ The "Smart Wishlist" is a cloud-native application that allows users to create a
 
 The application is designed using a decoupled, microservices-oriented architecture running entirely on serverless AWS services. This design prioritizes scalability, resilience, and cost-effectiveness.
 
-- **Synchronous Operations (API)**: User-facing requests (auth, wishlist management) are handled by a containerized NestJS application running on **AWS Lambda** with **API Gateway**. This service handles all business logic and interacts directly with the **DynamoDB** database and **Cognito** for authentication.
+- **Synchronous Operations (API)**: User-facing requests (auth, wishlist management, file uploads) are handled by a containerized NestJS application running on **AWS Lambda** with **API Gateway**. This service handles all business logic and interacts directly with the **DynamoDB** database, **Cognito** for authentication, **S3** for file storage, and **SNS** for notifications.
 - **Asynchronous Operations (Scraping)**: When a user adds a new item, the NestJS application does not perform the scraping directly. Instead, it sends a message containing the job details to an **SQS Queue**. An **AWS Lambda** function is subscribed to this queue, which processes the job, performs the scraping, and updates the item's status in DynamoDB. This ensures the API remains fast and responsive, regardless of how long the scraping process takes.
+- **File Storage**: Product images and user profile pictures are stored securely in **Amazon S3** with organized folder structures, signed URLs for secure access, and lifecycle policies for cost optimization.
+- **Notifications**: Real-time notifications are sent via **Amazon SNS** for wishlist activities, product updates, and system events, providing users with immediate feedback and engagement.
 
 ## 3. Tech Stack & Justification
 
@@ -26,6 +28,8 @@ The application is designed using a decoupled, microservices-oriented architectu
 - **Authentication**: **AWS Cognito** - A fully managed identity service that handles all aspects of user sign-up, sign-in, and JWT management, offloading complex security work.
 - **Database**: **Amazon DynamoDB** - A serverless NoSQL database that offers single-digit millisecond performance at any scale. Its key-value nature and pay-per-request model are ideal for our access patterns.
 - **Asynchronous Processing**: **AWS SQS & Lambda** - A classic serverless pattern. SQS provides a durable, reliable message queue, while Lambda offers cost-effective, event-driven compute for our background scraper.
+- **File Storage**: **Amazon S3** - A highly scalable, durable, and secure object storage service for product images, user profile pictures, and document attachments with organized folder structures and lifecycle policies.
+- **Notifications**: **Amazon SNS** - A fully managed messaging service for sending real-time notifications via email, SMS, and HTTP endpoints, enabling user engagement and system alerts.
 - **Compute**: **AWS Lambda** - A serverless compute service that runs our containerized NestJS application on-demand, providing automatic scaling and cost-effective execution.
 - **API Gateway**: **AWS API Gateway HTTP API** - A lightweight, high-performance API Gateway that provides HTTP endpoints for our Lambda function, handling routing and CORS configuration.
 - **Container Registry**: **Amazon ECR** - A secure, private registry for our Docker images, tightly integrated with other AWS services.
@@ -70,3 +74,12 @@ The application is designed using a decoupled, microservices-oriented architectu
   - **Architecture Pivot**: Successfully pivoted from AWS App Runner to AWS Lambda + API Gateway due to account activation limitations, demonstrating real-world problem-solving skills.
   - Implemented NestJS serverless architecture using `@codegenie/serverless-express` for Lambda integration.
   - Fully automated the deployment of all backend infrastructure and container images.
+
+- [x] **Week 8: Cloud Storage & Notifications**
+  - **Amazon S3 Integration**: Added secure object storage for product images, user profile pictures, and document attachments with organized folder structures and lifecycle policies.
+  - **Amazon SNS Integration**: Implemented real-time notifications for wishlist activities, product updates, and system events with message filtering and delivery guarantees.
+  - **File Upload API**: Created comprehensive file upload endpoints with validation, security controls, and signed URL generation for secure access.
+  - **Notification Service**: Built a robust notification system with multiple message types, error handling, and user preference support.
+  - **Enhanced User Experience**: Users can now upload product images, receive real-time notifications, and enjoy a more engaging wishlist experience.
+  - **Security & Performance**: Implemented proper access controls, file validation, and secure URL generation for all storage operations.
+  - **Cost Optimization**: Configured S3 lifecycle policies and SNS message filtering to optimize costs while maintaining functionality.

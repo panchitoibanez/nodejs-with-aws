@@ -10,6 +10,8 @@ import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import { HttpApi, CorsHttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as sns from 'aws-cdk-lib/aws-sns';
 
 
 export interface AppRunnerStackProps extends cdk.StackProps {
@@ -61,6 +63,32 @@ export class AppRunnerStack extends cdk.Stack {
         queueName: 'SmartWishlistQueue',
     });
 
+    // S3 Bucket for storing product images and attachments
+    const bucket = new s3.Bucket(this, 'SmartWishlistBucket', {
+        bucketName: `smart-wishlist-${this.account}-${this.region}`,
+        versioned: true,
+        encryption: s3.BucketEncryption.S3_MANAGED,
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        autoDeleteObjects: true,
+        lifecycleRules: [
+            {
+                id: 'DeleteIncompleteMultipartUploads',
+                abortIncompleteMultipartUploadAfter: cdk.Duration.days(1),
+            },
+            {
+                id: 'DeleteOldVersions',
+                noncurrentVersionExpiration: cdk.Duration.days(30),
+            },
+        ],
+    });
+
+    // SNS Topic for notifications
+    const notificationTopic = new sns.Topic(this, 'SmartWishlistNotificationTopic', {
+        topicName: 'smart-wishlist-notifications',
+        displayName: 'Smart Wishlist Notifications',
+    });
+
     const scraperRole = new iam.Role(this, 'SmartWishlistScraperRole', {
         roleName: 'SmartWishlistScraperRole',
         assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
@@ -97,11 +125,15 @@ export class AppRunnerStack extends cdk.Stack {
         COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
         SQS_QUEUE_URL: queue.queueUrl,
         DYNAMODB_TABLE_NAME: table.tableName,
+        S3_BUCKET_NAME: bucket.bucketName,
+        SNS_TOPIC_ARN: notificationTopic.topicArn,
       },
     });
 
     table.grantReadWriteData(apiLambda);
     queue.grantSendMessages(apiLambda);
+    bucket.grantReadWrite(apiLambda);
+    notificationTopic.grantPublish(apiLambda);
 
     // --- NEW: API Gateway to trigger the Lambda ---
     const httpApi = new HttpApi(this, 'SmartWishlistHttpApi', {
@@ -126,6 +158,14 @@ export class AppRunnerStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
     new cdk.CfnOutput(this, 'QueueUrl', { value: queue.queueUrl });
+    new cdk.CfnOutput(this, 'BucketName', { 
+      value: bucket.bucketName,
+      description: 'S3 bucket name for storing product images and attachments',
+    });
+    new cdk.CfnOutput(this, 'NotificationTopicArn', { 
+      value: notificationTopic.topicArn,
+      description: 'SNS topic ARN for sending notifications',
+    });
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: httpApi.url!,
       description: 'The public URL of the Smart Wishlist API Gateway',
