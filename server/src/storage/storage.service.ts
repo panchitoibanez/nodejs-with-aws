@@ -32,6 +32,17 @@ export class StorageService {
       region: this.configService.get<string>('AWS_REGION'),
     });
     this.bucketName = this.configService.get<string>('S3_BUCKET_NAME') || '';
+
+    // Debug logging to help identify the issue
+    console.log('StorageService initialized with:');
+    console.log('AWS_REGION:', this.configService.get<string>('AWS_REGION'));
+    console.log('S3_BUCKET_NAME:', this.bucketName);
+
+    if (!this.bucketName) {
+      throw new Error(
+        'S3_BUCKET_NAME environment variable is not set. Please check your CDK deployment and Lambda environment variables.',
+      );
+    }
   }
 
   /**
@@ -46,6 +57,11 @@ export class StorageService {
   ): Promise<UploadResult> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const key = `products/${wishlistId}/${itemId}/${timestamp}-${originalFileName}`;
+
+    console.log('Uploading product image with:');
+    console.log('Bucket:', this.bucketName);
+    console.log('Key:', key);
+    console.log('ContentType:', contentType);
 
     const command = new PutObjectCommand({
       Bucket: this.bucketName,

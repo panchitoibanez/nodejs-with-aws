@@ -15,7 +15,8 @@ describe('WishlistService', () => {
           useValue: {
             get: jest.fn((key: string) => {
               if (key === 'AWS_REGION') return 'us-east-1';
-              if (key === 'SQS_QUEUE_URL') return 'https://sqs.us-east-1.amazonaws.com/123456789012/test-queue';
+              if (key === 'SQS_QUEUE_URL')
+                return 'https://sqs.us-east-1.amazonaws.com/123456789012/test-queue';
               // Add other necessary config mocks here if needed
               return null;
             }),
